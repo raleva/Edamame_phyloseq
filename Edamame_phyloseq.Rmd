@@ -13,6 +13,8 @@ setwd() # change this to the location of your data
 
 
 # load packages
+#install.packages("phyloseq")
+#install.packages("ape")
 library(phyloseq)
 library(ape)
 
@@ -96,6 +98,11 @@ dim(otu_table(myphy)) #check dimensions of the otu table
 myphy_f <- subset_taxa(myphy, Kingdom=="Bacteria") #include all OTUS identified as Bacteria
 dim(otu_table(myphy_f)) #check how many were excluded
 
+myphy_f <- subset_taxa(myphy_f, Class!="Chloroplast") #exclude all OTUS identified as Chloroplast
+dim(otu_table(myphy_f)) #check how many were excluded
+
+
+
 ```
 
 Normalize/rarefy OTU table (once)
@@ -104,7 +111,7 @@ myphy_f_rare <- rarefy_even_depth(myphy_f, rngseed=1) #record seed and # of OTUs
 
 ```
 
-##Within-sample diversity
+##Estimate and plot within-sample diversity
 
 ```{r}
 library(ggplot2)
@@ -134,8 +141,8 @@ adonis(GPdist~Classification,  as(sample_data(myphy_f_rare), "data.frame"))
 
 
 
-**Combine all taxa assigned to the same Class for these analysis, 
-otherwise plotting the tree and barplot can take a long time. **
+*Combine all taxa assigned to the same Class for these analysis, 
+otherwise plotting the tree and barplot can take a long time. *
 
 Here, we combine all OTUs with the same taxonomic classification at the level of Class
 
@@ -168,7 +175,6 @@ plot_bar(myphy_Class_merged, fill = "Phylum")
 
 ## Phylogenetic tree
 
-
 ```{r}
 quartz()
 plot_tree(myphy_Class_merged, 
@@ -186,13 +192,13 @@ plot_tree(myphy_Class_merged,
 
 ```{r}
 
-myphy_acido <- subset_taxa(myphy_f_rare, Class=="Acidobacteriia")
-
-plot_tree(myphy_acido, 
-          color = "Genus", 
-          label.tips = "Genus", 
+myphy_thermo <- subset_taxa(myphy_f_rare, Class=="Thermoleophilia")
+quartz()
+plot_tree(myphy_thermo, 
+          color = "Classification",  
+          #label.tips = "Family",
           base.spacing = 0.01,
-          text.size = 3,
+          text.size = 2,
           size = "Abundance")+
   guides(color=guide_legend(ncol=2))
 
