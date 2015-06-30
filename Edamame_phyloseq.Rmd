@@ -211,7 +211,7 @@ Phyloseq main page with links to tutorials:
 <https://joey711.github.io/phyloseq/>
 
 RDP tutorials with phyloseq: 
-< https://rdp.cme.msu.edu/tutorials/stats/using_rdp_output_with_phyloseq.html>
+ https://rdp.cme.msu.edu/tutorials/stats/using_rdp_output_with_phyloseq.html
 
 
 
