@@ -1,0 +1,170 @@
+---
+title: "Phyloseq demo"
+author: "R Vannette"
+date: "June 29, 2015"
+output: html_document
+---
+
+## Load packages and data
+
+```{r}
+# load packages
+library(phyloseq)
+library(ape)
+
+# get files
+# sample data
+samp_dat <- read.csv("data/Centralia_Full_Map.txt", 
+                       sep = "\t", header = T )
+rownames(samp_dat) <- samp_dat$X.SampleID #row names must match OTU table headers
+SAMP <- sample_data(samp_dat)
+
+# biom file
+biom <- import_biom("data/otu_table_mc2_json.biom", header=T)
+OTU <- otu_table(biom, taxa_are_rows = TRUE)
+
+```
+
+Note: the .biom table should be in json format. See
+<http://biom-format.org/> for more details. 
+
+```{r}
+# taxonomy file
+taxonomy<-read.table("data/rep_set_tax_assignments.txt", sep="\t", header=F)
+
+###
+#code to split up the taxonomy string #
+##
+
+tax<-as.character(taxonomy$V2)
+head(tax)
+#root<-NA
+Kingdom<-NA
+Phylum<-NA
+Class<-NA
+Order<-NA
+Family<-NA
+Genus<-NA
+Species<-NA
+
+linaean<-data.frame(Kingdom,Phylum,Class,Order,Family,Genus,Species)
+
+for (i in 1:dim(taxonomy)[1]) {
+  
+  split.tax<-strsplit(tax[i],split=c(";"))
+  linaean[i,1]<-substr(split.tax[[1]][1], 4,30)
+  linaean[i,2]<-substr(split.tax[[1]][2], 4,30)
+  linaean[i,3]<-substr(split.tax[[1]][3], 4,30)
+  linaean[i,4]<-substr(split.tax[[1]][4], 4,30)
+  linaean[i,5]<-substr(split.tax[[1]][5], 4,30)
+  linaean[i,6]<-substr(split.tax[[1]][6], 4,30)
+  linaean[i,7]<-substr(split.tax[[1]][7], 4,30)
+}
+##
+
+# remove underscore before taxon name
+rownames(linaean) <- taxonomy$V1
+for(i in 2:7){
+linaean[,i] <- gsub("_","",linaean[,i])
+}
+
+TAX <- tax_table(as.matrix(linaean))
+
+
+
+# tree file
+tre<-read.tree("data/rep_set.tre")
+# tree tip labels must match OTU names above. 
+
+
+# put them together
+myphy<- phyloseq(OTU, TAX, SAMP, tre)
+
+```
+
+## data filtering and subsampling
+
+Filter out OTUs that do not match Kingdom Bacteria
+
+```{r}
+dim(otu_table(myphy)) #check dimensions of the otu table
+myphy_f <- subset_taxa(myphy, Kingdom=="Bacteria") #exclude all OTUS not identified as Bacteria
+dim(otu_table(myphy_f)) #check how many were excluded
+
+```
+
+Normalize/rarefy OTU table (once)
+```{r}
+myphy_f_rare <- rarefy_even_depth(myphy_f, rngseed=1) #record seed and # of OTUs removed
+
+```
+
+##Within-sample diversity
+
+```{r}
+library(ggplot2)
+
+plot_richness(myphy_f_rare, x="Classification", 
+              measures=c("Observed", "Shannon"))+
+  geom_boxplot(aes(color=Classification))+
+  theme_bw()
+
+```
+
+##Among-sample diversity 
+
+```{r}
+library(vegan)
+
+GPdist = phyloseq::distance(myphy_f_rare, "bray")
+GP.ord <- ordinate(myphy_f_rare, "NMDS", "bray")
+
+plot_ordination(myphy_f_rare, ordination = GP.ord, type = "samples", 
+                color = "Classification",   title = "Bacterial NMDS (Bray-Curtis dissim.)")+theme_bw()
+
+adonis(GPdist~Classification,  as(sample_data(myphy_f_rare), "data.frame"))
+
+```
+
+
+Combine all taxa assigned to the same Class for these analysis, 
+otherwise plotting the tree and barplot can take a long time. 
+
+```{r}
+myphy_Class <- tax_glom(myphy_f_rare, taxrank="Class")
+
+
+```
+
+
+## Plot a phylogenetic tree 
+
+```{r}
+
+quartz()
+plot_tree(myphy_Class, 
+          color = "Phylum", 
+          label.tips = "Class", 
+          base.spacing = 0.001,
+          text.size = 3,
+          size = "Abundance"
+          )
+
+
+```
+## Composition barplots
+
+```{r}
+
+plot_bar(myphy_Class, fill="Phylum")
+
+```
+
+Now merge replicates and re-make plots
+
+```{r}
+myphy_Class_merged <- merge_samples(myphy_Class, "Sample")
+
+plot_bar(myphy_Class_merged, fill = "Phylum")
+```
+
