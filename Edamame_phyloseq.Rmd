@@ -8,8 +8,8 @@ output: html_document
 ## Load packages and data
 
 ```{r}
-getwd()
-setwd() # change this to the location of your data
+#getwd()
+#setwd() # change this to the location of your data
 
 
 # load packages
