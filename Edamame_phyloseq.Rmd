@@ -8,6 +8,10 @@ output: html_document
 ## Load packages and data
 
 ```{r}
+getwd()
+setwd() # change this to the location of your data
+
+
 # load packages
 library(phyloseq)
 library(ape)
@@ -16,7 +20,9 @@ library(ape)
 # sample data
 samp_dat <- read.csv("data/Centralia_Full_Map.txt", 
                        sep = "\t", header = T )
+
 rownames(samp_dat) <- samp_dat$X.SampleID #row names must match OTU table headers
+
 SAMP <- sample_data(samp_dat)
 
 # biom file
@@ -76,19 +82,18 @@ TAX <- tax_table(as.matrix(linaean))
 tre<-read.tree("data/rep_set.tre")
 # tree tip labels must match OTU names above. 
 
-
 # put them together
 myphy<- phyloseq(OTU, TAX, SAMP, tre)
 
 ```
 
-## data filtering and subsampling
+##Data filtering and subsampling
 
 Filter out OTUs that do not match Kingdom Bacteria
 
 ```{r}
 dim(otu_table(myphy)) #check dimensions of the otu table
-myphy_f <- subset_taxa(myphy, Kingdom=="Bacteria") #exclude all OTUS not identified as Bacteria
+myphy_f <- subset_taxa(myphy, Kingdom=="Bacteria") #include all OTUS identified as Bacteria
 dim(otu_table(myphy_f)) #check how many were excluded
 
 ```
@@ -111,13 +116,13 @@ plot_richness(myphy_f_rare, x="Classification",
 
 ```
 
-##Among-sample diversity 
+##Comparative diversity and ordination
 
 ```{r}
 library(vegan)
 
-GPdist = phyloseq::distance(myphy_f_rare, "bray")
-GP.ord <- ordinate(myphy_f_rare, "NMDS", "bray")
+GPdist = phyloseq::distance(myphy_f_rare, "bray") # create distance matrix
+GP.ord <- ordinate(myphy_f_rare, "NMDS", "bray") # ordination 
 
 plot_ordination(myphy_f_rare, ordination = GP.ord, type = "samples", 
                 color = "Classification",   title = "Bacterial NMDS (Bray-Curtis dissim.)")+theme_bw()
@@ -127,31 +132,24 @@ adonis(GPdist~Classification,  as(sample_data(myphy_f_rare), "data.frame"))
 ```
 
 
-Combine all taxa assigned to the same Class for these analysis, 
-otherwise plotting the tree and barplot can take a long time. 
+
+
+**Combine all taxa assigned to the same Class for these analysis, 
+otherwise plotting the tree and barplot can take a long time. **
+
+Here, we combine all OTUs with the same taxonomic classification at the level of Class
+
 
 ```{r}
+dim(otu_table(myphy_f_rare))
+
 myphy_Class <- tax_glom(myphy_f_rare, taxrank="Class")
 
+dim(otu_table(myphy_Class))
 
 ```
 
 
-## Plot a phylogenetic tree 
-
-```{r}
-
-quartz()
-plot_tree(myphy_Class, 
-          color = "Phylum", 
-          label.tips = "Class", 
-          base.spacing = 0.001,
-          text.size = 3,
-          size = "Abundance"
-          )
-
-
-```
 ## Composition barplots
 
 ```{r}
@@ -167,4 +165,47 @@ myphy_Class_merged <- merge_samples(myphy_Class, "Sample")
 
 plot_bar(myphy_Class_merged, fill = "Phylum")
 ```
+
+## Phylogenetic tree
+
+
+```{r}
+quartz()
+plot_tree(myphy_Class_merged, 
+          color = "Phylum", 
+          label.tips = "Class", 
+          base.spacing = 0.01,
+          text.size = 3,
+          size = "Abundance")+
+  guides(color=guide_legend(ncol=2))
+
+```
+
+
+## Subsetting made easy
+
+```{r}
+
+myphy_acido <- subset_taxa(myphy_f_rare, Class=="Acidobacteriia")
+
+plot_tree(myphy_acido, 
+          color = "Genus", 
+          label.tips = "Genus", 
+          base.spacing = 0.01,
+          text.size = 3,
+          size = "Abundance")+
+  guides(color=guide_legend(ncol=2))
+
+```
+
+
+## Other resources
+
+Phyloseq main page with links to tutorials: 
+<https://joey711.github.io/phyloseq/>
+
+RDP tutorials with phyloseq: 
+< https://rdp.cme.msu.edu/tutorials/stats/using_rdp_output_with_phyloseq.html>
+
+
 
