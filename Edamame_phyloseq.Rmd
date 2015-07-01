@@ -8,6 +8,7 @@ output: html_document
 ## Before installing phyloseq, you first need to install Bioconductor. Run the following commands from your RStudio to install Bioconductor and its dependencies
 
 source("http://bioconductor.org/biocLite.R")
+
 biocLite("phyloseq")
 
 ## Load packages and data
