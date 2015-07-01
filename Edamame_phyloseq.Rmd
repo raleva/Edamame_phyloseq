@@ -81,7 +81,7 @@ linaean[,i] <- gsub("_","",linaean[,i])
 
 TAX <- tax_table(as.matrix(linaean))
 
-##if you want to import representative sequences of your OTUs which is basically your rep_set.fna file after you have picked OTUs in QIIME
+##if you want to import representative sequences of your OTUs which is basically your rep_set.fna file after you have picked OTUs in QIIME; you will need Biostrings package for this.
 
 #import ref seq
 refseqs<-readDNAStringSet("rep_set.fna")
