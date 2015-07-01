@@ -36,6 +36,9 @@ OTU <- otu_table(biom, taxa_are_rows = TRUE)
 Note: the .biom table should be in json format. See
 <http://biom-format.org/> for more details. 
 
+If you're working with mothur output files, phyloseq has the `import_mothur` command that allows the user to import the shared/otu table, taxonomy, and phylogenetic tree files into phyloseq in one command.
+
+
 ```{r}
 # taxonomy file
 taxonomy<-read.table("data/rep_set_tax_assignments.txt", sep="\t", header=F)
@@ -83,8 +86,18 @@ TAX <- tax_table(as.matrix(linaean))
 # tree file
 tre<-read.tree("data/rep_set.tre")
 # tree tip labels must match OTU names above. 
+```
 
-# put them together
+## Combine the data into a phyloseq-class object
+
+Note that phyloseq works with a **phyloseq-class object**, which is an object that has 4 types of data inside of it:  
+1. OTU Table:  Known as `otu_table()`  
+2. Taxonomy File:  Known as `tax_table()`  
+3. Metadata File with sample information: Known as `sample_data()`  
+4. Phylogenetic Tree File:  Known as `phy_tree()`
+
+```{r}
+# Put the 4 data types together into a phyloseq-class object
 myphy<- phyloseq(OTU, TAX, SAMP, tre)
 
 ```
@@ -128,13 +141,13 @@ plot_richness(myphy_f_rare, x="Classification",
 ```{r}
 library(vegan)
 
-GPdist = phyloseq::distance(myphy_f_rare, "bray") # create distance matrix
-GP.ord <- ordinate(myphy_f_rare, "NMDS", "bray") # ordination 
+GPdist = phyloseq::distance(myphy_f_rare, "bray") # create bray-curtis distance matrix
+GP.ord <- ordinate(myphy_f_rare, "NMDS", "bray") # NMDS ordination 
 
 plot_ordination(myphy_f_rare, ordination = GP.ord, type = "samples", 
                 color = "Classification",   title = "Bacterial NMDS (Bray-Curtis dissim.)")+theme_bw()
 
-adonis(GPdist~Classification,  as(sample_data(myphy_f_rare), "data.frame"))
+adonis(GPdist~Classification,  as(sample_data(myphy_f_rare), "data.frame")) #Are there significant changes? 
 
 ```
 
@@ -148,11 +161,11 @@ Here, we combine all OTUs with the same taxonomic classification at the level of
 
 
 ```{r}
-dim(otu_table(myphy_f_rare))
+dim(otu_table(myphy_f_rare)) #check dimensions of the otu table
 
-myphy_Class <- tax_glom(myphy_f_rare, taxrank="Class")
+myphy_Class <- tax_glom(myphy_f_rare, taxrank="Class") #agglomerate taxa based on class level
 
-dim(otu_table(myphy_Class))
+dim(otu_table(myphy_Class)) 
 
 ```
 
@@ -161,7 +174,7 @@ dim(otu_table(myphy_Class))
 
 ```{r}
 
-plot_bar(myphy_Class, fill="Phylum")
+plot_bar(myphy_Class, fill="Phylum") 
 
 ```
 
@@ -170,7 +183,7 @@ Now merge replicates and re-make plots
 ```{r}
 myphy_Class_merged <- merge_samples(myphy_Class, "Sample")
 
-plot_bar(myphy_Class_merged, fill = "Phylum")
+plot_bar(myphy_Class_merged, fill = "Phylum") 
 ```
 
 ## Phylogenetic tree
