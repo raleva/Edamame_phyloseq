@@ -81,6 +81,19 @@ linaean[,i] <- gsub("_","",linaean[,i])
 
 TAX <- tax_table(as.matrix(linaean))
 
+#if you want to import representative sequences of your OTUs which is basically your rep_set.fna file after you have picked OTUs in QIIME
+
+#import ref seq
+refseqs<-readDNAStringSet("rep_set.fna")
+refseqs
+head(names(refseqs))
+
+#parse names of each sequence such that they match the format of OTU names in other files
+#use substitution function, for these, see the biom table in csv format and find
+#out the the length of the headers before space, in my example, the shortest id is 5 and longest is 28 before the header starts
+names(refseqs) = gsub("(^[[:print:]]{5,28})([[:space:]]{1,})([[:print:]]{0,}$)","\\1", names(refseqs))
+head(names(refseqs))
+tail(names(refseqs))
 
 
 # tree file
